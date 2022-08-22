@@ -178,7 +178,7 @@ Set-AzVMExtension -ResourceGroupName $RG1 -ExtensionName IIS -VMName VM-Spoke-01
 
 
 ## Create the on-premises virtual machine
-New-AzVm -ResourceGroupName $RG1 -Name "VM-Onprem" -Location $Location1 -VirtualNetworkName $VNetnameOnprem -SubnetName $SNNameOnprem -OpenPorts 3389 -Size "Standard_DS2"
+New-AzVm -ResourceGroupName $RG1 -Name "VM-Onprem" -Location $Location1 -VirtualNetworkName $VNetnameOnprem -SubnetName $SNNameOnprem -OpenPorts 3389 -Size "Standard_D2s_v3" -PublicIPAddress "vm-onprem"
 
 
 ## Test the firewall

@@ -2,10 +2,10 @@
 New-AzResourceGroup -Name AKSResourceGroup -Location eastus
 $wid = New-AzOperationalInsightsWorkspace -Location eastus -Name akslogs -Sku PerGB2018 -ResourceGroupName AKSResourceGroup
 mkdir C:\Users\Brian\.ssh\
-New-AzAksCluster -ResourceGroupName AKSResourceGroup -Name myAKSCluster -NodeCount 1 -GenerateSshKey -WorkspaceResourceId $wid
+$aksCluster = New-AzAksCluster -ResourceGroupName AKSResourceGroup -Name myAKSCluster -NodeCount 1 -GenerateSshKey -WorkspaceResourceId $wid
 
 # Get a reference to the new AKSVNet
-$AKSvnet = Get-AzVirtualNetwork -Name aks-vnet-36511838 -ResourceGroupName MC_AKSResourceGroup_myAKSCluster_eastus
+$AKSvnet = Get-AzVirtualNetwork -Name (get-azresource -ResourceType "Microsoft.Network/virtualNetworks" -ResourceGroupName $aksCluster.NodeResourceGroup).Name -ResourceGroupName $aksCluster.NodeResourceGroup
 
 # Peer the new AKS Vnet with the Hub
 # Peer hub to AKS
