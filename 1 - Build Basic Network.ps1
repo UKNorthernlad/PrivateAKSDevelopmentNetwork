@@ -119,9 +119,6 @@ New-AzVirtualNetworkGatewayConnection -Name $ConnectionNameOnprem -ResourceGroup
 Get-AzVirtualNetworkGatewayConnection -Name $ConnectionNameHub -ResourceGroupName $RG1
 
 
-### Stop here is you want to create an AKS cluster in the spoke. See the tab "Add AKS Cluster".
-### If you want a quick VM and all routing in place for testing, carry on below.
-
 
 # Peer the hub and spoke virtual networks
 # Peer hub to spoke
