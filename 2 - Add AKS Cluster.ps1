@@ -30,10 +30,16 @@ $VNetAKSPrefix = $AKSvnet.AddressSpace.AddressPrefixes[0]
 
 # The previous "1 - Build Basic Network.ps1" script created a rule for traffic from the on-prem network to the HubVNet to be routed via the Firewall private IP address.
 # We don't need to add or change that - it's good as it is.
-# We don't need to add any routing from the Hub to the AKS/Server VNets - this is done automatically by the network peering.
+# We will however add and extra route to the routing table to send traffic to the AKS VNet as well
+
+$routeTableHubSpokeAndAKS = Get-AzRouteTable -ResourceGroupName $RG1 -Name UDR-Hub-Spoke
+
+$routeTableHubSpokeAndAKS | Add-AzRouteConfig -Name "ToAKS" -AddressPrefix $VNetAKSPrefix -NextHopType "VirtualAppliance" -NextHopIpAddress $AzfwPrivateIP | Set-AzRouteTable
+
+#Associate the route table to the VNet Hub GW subnet
+Set-AzVirtualNetworkSubnetConfig -VirtualNetwork $VNetHub -Name $SNnameGW -AddressPrefix $SNGWHubPrefix -RouteTable $routeTableHubSpokeAndAKS | Set-AzVirtualNetwork
 
 # We do need to create a custom route in the AKS VNet subnet to make sure all outgoing traffic is routed via the Firewall.
-# Create a custom routing table, with BGP route propagation disabled. The property is now called "Virtual network gateway route propagation," but the API still refers to the parameter as "DisableBgpRoutePropagation."
 $routeTableAKStoHub = New-AzRouteTable -Name 'UDR-AKS-To-Hub' -ResourceGroupName $aksCluster.NodeResourceGroup -location $aksCluster.Location -DisableBgpRoutePropagation
 
 #Create a route
@@ -48,10 +54,9 @@ Set-AzVirtualNetworkSubnetConfig -VirtualNetwork $AKSvnet -Name "aks-subnet" -Ad
 
 
 ## Add firewall rules to connect to the cluster.
-$Rule1 = New-AzFirewallNetworkRule -Name "AllowApplication1" -Protocol TCP -SourceAddress $SNOnpremPrefix -DestinationAddress $VNetAKSPrefix -DestinationPort 30000
-
-$NetRuleCollection = New-AzFirewallNetworkRuleCollection -Name RCNet01 -Priority 300 -Rule $Rule1 -ActionType "Allow"
-$Azfw.NetworkRuleCollections = $NetRuleCollection
+$aksApp1 = New-AzFirewallNetworkRule -Name "AllowApplication1" -Protocol TCP -SourceAddress $SNOnpremPrefix -DestinationAddress $VNetAKSPrefix -DestinationPort 30000
+$AKSNetRuleCollection = New-AzFirewallNetworkRuleCollection -Name AKSNet01 -Priority 400 -Rule $aksApp1 -ActionType "Allow"
+$Azfw.NetworkRuleCollections += $AKSNetRuleCollection
 Set-AzFirewall -AzureFirewall $Azfw
 
 # Connect
@@ -60,3 +65,5 @@ Import-AzAksCredential -ResourceGroupName AKSResourceGroup -Name myAKSCluster
 # Add and application
 kubectl apply -f vote.yaml
 kubectl get service azure-vote-front --watch
+
+# Browse to http://10.224.0.4:30000/ to test the application

@@ -1,9 +1,9 @@
 # Login 
-login-azaccount -TenantId <someGUID>
-get-azsubscription -SubscriptionId <someGUID> | select-azsubscription
+#login-azaccount -TenantId <someGUID>
+#get-azsubscription -SubscriptionId <someGUID> | select-azsubscription
 
 # Enable any required resource providers
-Register-AzResourceProvider -ProviderNamespace Microsoft.VirtualMachineImages
+#Register-AzResourceProvider -ProviderNamespace Microsoft.VirtualMachineImages
 
 # Declare the variables to create the 3 virtual networks.
 $RG1 = "FW-Hybrid-Test"
@@ -177,10 +177,11 @@ Set-AzVMExtension -ResourceGroupName $RG1 -ExtensionName IIS -VMName VM-Spoke-01
 ## Create the on-premises virtual machine
 New-AzVm -ResourceGroupName $RG1 -Name "VM-Onprem" -Location $Location1 -VirtualNetworkName $VNetnameOnprem -SubnetName $SNNameOnprem -OpenPorts 3389 -Size "Standard_D2s_v3" -PublicIPAddress "vm-onprem"
 
+# TODO: The VM you just created needs port 3389 opening on the "Vnet-Onprem-SN-Corp-nsg-eastus" subnet.
+# TODO: Manually add a rule for now until this gets scripted else you won't be able to connect via RDP.
 
 ## Test the firewall
-# 0 - Get the VM-spoke-01 private IP
-#     $NIC.IpConfigurations.privateipaddress
+# 0 - Get the VM-spoke-01 private IP - $NIC.IpConfigurations.privateipaddress (probably 10.6.0.4)
 # 1 - From the Azure portal, connect to the VM-Onprem virtual machine.
-# 2 - Open a web browser on VM-Onprem, and browse to http://<VM-spoke-01 private IP>.
+# 2 - Open a web browser on VM-Onprem, and browse to http://10.6.0.4
 # 3 - You should see IIS default page.
